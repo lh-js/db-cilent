@@ -1,7 +1,15 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import * as path from 'path';
 import { DatabaseManager } from './database/databaseManager';
 import { RedisManager } from './database/redisManager';
+
+// 禁用 GPU 加速以避免虚拟机/某些系统上的兼容性问题
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+app.commandLine.appendSwitch('no-sandbox');
 
 let mainWindow: BrowserWindow | null = null;
 const dbManager = new DatabaseManager();
@@ -47,6 +55,41 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // 隐藏菜单栏（Windows/Linux）或设置简洁菜单（Mac）
+  if (process.platform === 'darwin') {
+    // Mac 保留基本菜单
+    const template: Electron.MenuItemConstructorOptions[] = [
+      {
+        label: app.name,
+        submenu: [
+          { role: 'about' },
+          { type: 'separator' },
+          { role: 'hide' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { role: 'quit' }
+        ]
+      },
+      {
+        label: '编辑',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'selectAll' }
+        ]
+      }
+    ];
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  } else {
+    // Windows/Linux 隐藏菜单
+    Menu.setApplicationMenu(null);
+  }
+
   createWindow();
 
   app.on('activate', () => {

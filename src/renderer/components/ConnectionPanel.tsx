@@ -24,7 +24,7 @@ interface ConnectionPanelProps {
   connections: Connection[];
   currentConnection: string | null;
   onConnectionCreated: (connection: Connection) => void;
-  onConnectionSelected: (connectionId: string) => void;
+  onConnectionSelected: (connectionId: string) => Promise<void> | void;
   onConnectionDeleted: (connectionId: string) => void;
   onConnectionUpdated: (connection: Connection) => void;
 }
@@ -39,6 +39,16 @@ const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+
+  const handleConnectionClick = async (connectionId: string) => {
+    setConnectingId(connectionId);
+    try {
+      await onConnectionSelected(connectionId);
+    } finally {
+      setConnectingId(null);
+    }
+  };
 
   return (
     <div className="connection-panel">
@@ -72,11 +82,11 @@ const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
         {connections.map((conn) => (
           <div
             key={conn.id}
-            className={`connection-item ${currentConnection === conn.id ? 'active' : ''}`}
-            onClick={() => onConnectionSelected(conn.id)}
+            className={`connection-item ${currentConnection === conn.id ? 'active' : ''} ${connectingId === conn.id ? 'connecting' : ''}`}
+            onClick={() => !connectingId && handleConnectionClick(conn.id)}
           >
             <div className="connection-icon">
-              {conn.type === 'mysql' ? '🗄️' : conn.type === 'redis' ? '🔴' : '📊'}
+              {connectingId === conn.id ? '⏳' : (conn.type === 'mysql' ? '🗄️' : conn.type === 'redis' ? '🔴' : '📊')}
             </div>
             <div className="connection-info">
               <div className="connection-name">{conn.name}</div>

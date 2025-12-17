@@ -29,8 +29,24 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onSuccess, onCancel, ed
     database: editConnection?.database || '',
   });
   const [testing, setTesting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [electronAPIAvailable, setElectronAPIAvailable] = useState(false);
+
+  // 当 editConnection 变化时更新表单数据
+  useEffect(() => {
+    if (editConnection) {
+      setFormData({
+        name: editConnection.name || '',
+        type: editConnection.type || 'mysql',
+        host: editConnection.host || 'localhost',
+        port: editConnection.port || 3306,
+        user: editConnection.user || 'root',
+        password: editConnection.password || '',
+        database: editConnection.database || '',
+      });
+    }
+  }, [editConnection]);
 
   useEffect(() => {
     // 检查 electronAPI 是否可用
@@ -113,6 +129,7 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onSuccess, onCancel, ed
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setConnecting(true);
     try {
       // 检查 electronAPI 是否可用
       if (!window.electronAPI) {
@@ -144,11 +161,17 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onSuccess, onCancel, ed
       }
     } catch (err: any) {
       setError(err.message || '连接失败');
+    } finally {
+      setConnecting(false);
     }
   };
 
   return (
     <form className="connection-form" onSubmit={handleSubmit}>
+      <div className="form-header">
+        <h3>{editConnection ? '编辑连接' : '新建连接'}</h3>
+        <button type="button" className="btn-close" onClick={onCancel} title="关闭">×</button>
+      </div>
       <div className="form-group">
         <label>连接名称</label>
         <input
@@ -259,9 +282,6 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onSuccess, onCancel, ed
       {error && <div className="error-message">{error}</div>}
 
       <div className="form-actions">
-        <button type="button" className="btn-secondary" onClick={onCancel}>
-          取消
-        </button>
         <button 
           type="button" 
           className="btn-secondary" 
@@ -273,9 +293,9 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onSuccess, onCancel, ed
         <button 
           type="submit" 
           className="btn-primary"
-          disabled={!electronAPIAvailable}
+          disabled={!electronAPIAvailable || connecting}
         >
-          {editConnection ? '保存' : '连接'}
+          {connecting ? '连接中...' : (editConnection ? '保存' : '连接')}
         </button>
       </div>
     </form>

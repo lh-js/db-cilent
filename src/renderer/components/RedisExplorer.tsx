@@ -16,6 +16,7 @@ const RedisExplorer: React.FC<RedisExplorerProps> = ({
   const [keys, setKeys] = useState<string[]>([]);
   const [currentDb, setCurrentDb] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+  const [loadingKey, setLoadingKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [searchPattern, setSearchPattern] = useState('*');
@@ -57,17 +58,20 @@ const RedisExplorer: React.FC<RedisExplorerProps> = ({
 
   const handleDbSelect = async (dbIndex: number) => {
     setCurrentDb(dbIndex);
+    setLoading(true);
     try {
       await window.electronAPI.redisSelectDatabase(connectionId, dbIndex);
-      loadKeys(searchPattern);
+      await loadKeys(searchPattern);
     } catch (err: any) {
       setError(err.message);
+      setLoading(false);
     }
   };
 
   const handleKeyClick = async (key: string) => {
     setSelectedKey(key);
     if (onKeySelected) {
+      setLoadingKey(true);
       onLoadingChange?.(true);
       try {
         const result = await window.electronAPI.redisGetValue(connectionId, key);
@@ -82,6 +86,7 @@ const RedisExplorer: React.FC<RedisExplorerProps> = ({
       } catch (err) {
         console.error(err);
       } finally {
+        setLoadingKey(false);
         onLoadingChange?.(false);
       }
     }
@@ -135,7 +140,7 @@ const RedisExplorer: React.FC<RedisExplorerProps> = ({
           {keys.map((key) => (
             <div
               key={key}
-              className={`table-item ${selectedKey === key ? 'active' : ''}`}
+              className={`table-item ${selectedKey === key ? 'active' : ''} ${loadingKey && selectedKey === key ? 'loading' : ''}`}
               onClick={() => handleKeyClick(key)}
             >
               🔑 {key}

@@ -14,7 +14,11 @@ interface Connection {
   config?: any;
 }
 
-function App() {
+interface AppProps {
+  onReady?: () => void;
+}
+
+function App({ onReady }: AppProps) {
   const [currentConnection, setCurrentConnection] = useState<string | null>(null);
   const [currentDatabase, setCurrentDatabase] = useState<string | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -29,6 +33,8 @@ function App() {
     if (saved) {
       setConnections(JSON.parse(saved));
     }
+    // 通知应用已加载完成
+    onReady?.();
   }, []);
 
   const handleConnectionCreated = (connection: Connection) => {
