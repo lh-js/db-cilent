@@ -1,0 +1,122 @@
+.connection-panel {
+  padding: 16px;
+}
+
+.connection-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.connection-panel-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.btn-primary {
+  background-color: #007acc;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #005a9e;
+}
+
+.btn-primary:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.connection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.connection-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #2d2d2d;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+
+.connection-item:hover {
+  background-color: #353535;
+}
+
+.connection-item.active {
+  background-color: #007acc;
+  border-color: #005a9e;
+}
+
+.connection-icon {
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.connection-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.connection-name {
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connection-type {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.connection-item.active .connection-type {
+  color: #e0e0e0;
+}
+
+.btn-edit,
+.btn-delete {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.connection-item:hover .btn-edit,
+.connection-item:hover .btn-delete {
+  opacity: 1;
+}
+
+.btn-edit:hover {
+  color: #4fc3f7;
+  background-color: rgba(79, 195, 247, 0.1);
+}
+
+.btn-delete:hover {
+  color: #ff5555;
+  background-color: rgba(255, 85, 85, 0.1);
+}
+
