@@ -139,11 +139,15 @@ function App({ onReady }: AppProps) {
     }
   };
 
-  const handleCreateTable = async (tableName: string, columns: any[], indexes: any[]) => {
+  const handleCreateTable = async (tableName: string, columns: any[], indexes: any[], foreignKeys: any[]) => {
     if (!currentConnection || !currentDatabase) return;
     try {
       const result = await window.electronAPI.createTable(currentConnection, currentDatabase, tableName, columns, indexes);
       if (result.success) {
+        // 添加外键
+        for (const fk of foreignKeys) {
+          await window.electronAPI.addForeignKey(currentConnection, currentDatabase, tableName, fk);
+        }
         setShowCreateTable(false);
         // 触发刷新表列表
         explorerRef.current?.loadTables?.();
@@ -311,6 +315,8 @@ function App({ onReady }: AppProps) {
       {/* 创建表对话框 */}
       {showCreateTable && (
         <CreateTableDialog
+          connectionId={currentConnection || undefined}
+          database={currentDatabase || undefined}
           onClose={() => setShowCreateTable(false)}
           onSubmit={handleCreateTable}
         />

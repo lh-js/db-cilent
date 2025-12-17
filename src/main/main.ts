@@ -55,39 +55,47 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  // 隐藏菜单栏（Windows/Linux）或设置简洁菜单（Mac）
-  if (process.platform === 'darwin') {
-    // Mac 保留基本菜单
-    const template: Electron.MenuItemConstructorOptions[] = [
-      {
-        label: app.name,
-        submenu: [
-          { role: 'about' },
-          { type: 'separator' },
-          { role: 'hide' },
-          { role: 'hideOthers' },
-          { role: 'unhide' },
-          { type: 'separator' },
-          { role: 'quit' }
-        ]
-      },
-      {
-        label: '编辑',
-        submenu: [
-          { role: 'undo' },
-          { role: 'redo' },
-          { type: 'separator' },
-          { role: 'cut' },
-          { role: 'copy' },
-          { role: 'paste' },
-          { role: 'selectAll' }
-        ]
-      }
-    ];
-    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+
+  // 开发模式保留默认菜单（包含开发者工具），打包后隐藏或简化菜单
+  if (isDev) {
+    // 开发模式：保留完整菜单（包含 View 菜单的开发者工具）
+    // 不设置菜单，使用 Electron 默认菜单
   } else {
-    // Windows/Linux 隐藏菜单
-    Menu.setApplicationMenu(null);
+    // 打包模式：隐藏菜单栏（Windows/Linux）或设置简洁菜单（Mac）
+    if (process.platform === 'darwin') {
+      // Mac 保留基本菜单
+      const template: Electron.MenuItemConstructorOptions[] = [
+        {
+          label: app.name,
+          submenu: [
+            { role: 'about' },
+            { type: 'separator' },
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            { type: 'separator' },
+            { role: 'quit' }
+          ]
+        },
+        {
+          label: '编辑',
+          submenu: [
+            { role: 'undo' },
+            { role: 'redo' },
+            { type: 'separator' },
+            { role: 'cut' },
+            { role: 'copy' },
+            { role: 'paste' },
+            { role: 'selectAll' }
+          ]
+        }
+      ];
+      Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    } else {
+      // Windows/Linux 隐藏菜单
+      Menu.setApplicationMenu(null);
+    }
   }
 
   createWindow();
@@ -272,6 +280,69 @@ ipcMain.handle('db:delete-rows', async (_event, connectionId, database, table, p
 ipcMain.handle('db:truncate-table', async (_event, connectionId, database, table) => {
   try {
     await dbManager.truncateTable(connectionId, database, table);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:get-table-indexes', async (_event, connectionId, database, table) => {
+  try {
+    const indexes = await dbManager.getTableIndexes(connectionId, database, table);
+    return { success: true, data: indexes };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:get-table-foreign-keys', async (_event, connectionId, database, table) => {
+  try {
+    const fks = await dbManager.getTableForeignKeys(connectionId, database, table);
+    return { success: true, data: fks };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:add-index', async (_event, connectionId, database, table, index) => {
+  try {
+    await dbManager.addIndex(connectionId, database, table, index);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:drop-index', async (_event, connectionId, database, table, indexName) => {
+  try {
+    await dbManager.dropIndex(connectionId, database, table, indexName);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:add-foreign-key', async (_event, connectionId, database, table, fk) => {
+  try {
+    await dbManager.addForeignKey(connectionId, database, table, fk);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:drop-foreign-key', async (_event, connectionId, database, table, fkName) => {
+  try {
+    await dbManager.dropForeignKey(connectionId, database, table, fkName);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:modify-primary-key', async (_event, connectionId, database, table, columns) => {
+  try {
+    await dbManager.modifyPrimaryKey(connectionId, database, table, columns);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

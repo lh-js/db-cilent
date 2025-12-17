@@ -21,10 +21,23 @@ interface Index {
   type: 'INDEX' | 'UNIQUE' | 'FULLTEXT';
 }
 
-interface CreateTableDialogProps {
-  onClose: () => void;
-  onSubmit: (tableName: string, columns: Column[], indexes: Index[]) => void;
+interface ForeignKey {
+  name: string;
+  column: string;
+  refTable: string;
+  refColumn: string;
+  onDelete: string;
+  onUpdate: string;
 }
+
+interface CreateTableDialogProps {
+  connectionId?: string;
+  database?: string;
+  onClose: () => void;
+  onSubmit: (tableName: string, columns: Column[], indexes: Index[], foreignKeys: ForeignKey[]) => void;
+}
+
+const FK_ACTIONS = ['RESTRICT', 'CASCADE', 'SET NULL', 'NO ACTION', 'SET DEFAULT'];
 
 // 基础类型（不带长度）
 const BASE_TYPES = [
@@ -119,14 +132,49 @@ const getTypeInfo = (type: string) => {
   return BASE_TYPES.find(t => t.value === type) || { hasLength: false, defaultLength: '' };
 };
 
-const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ onClose, onSubmit }) => {
+const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ connectionId, database, onClose, onSubmit }) => {
   const [tableName, setTableName] = useState('');
   const [columns, setColumns] = useState<Column[]>([
     { name: 'id', type: 'INT', length: '', nullable: false, defaultValue: '', primaryKey: true, autoIncrement: true, unique: false, index: false, unsigned: true, comment: '' }
   ]);
   const [indexes, setIndexes] = useState<Index[]>([]);
-  const [activeTab, setActiveTab] = useState<'columns' | 'indexes'>('columns');
+  const [foreignKeys, setForeignKeys] = useState<ForeignKey[]>([]);
+  const [activeTab, setActiveTab] = useState<'columns' | 'indexes' | 'foreignKeys'>('columns');
   const [customDefaults, setCustomDefaults] = useState<Record<number, boolean>>({});
+  const [allTables, setAllTables] = useState<string[]>([]);
+  const [refTableColumns, setRefTableColumns] = useState<Record<string, string[]>>({});
+
+  // 加载表列表（用于外键）
+  React.useEffect(() => {
+    if (connectionId && database) {
+      loadAllTables();
+    }
+  }, [connectionId, database]);
+
+  const loadAllTables = async () => {
+    if (!connectionId || !database) return;
+    try {
+      const result = await window.electronAPI.getTables(connectionId, database);
+      if (result.success) {
+        setAllTables(result.data);
+      }
+    } catch (e) {
+      console.error('加载表列表失败', e);
+    }
+  };
+
+  const loadRefTableColumns = async (refTable: string) => {
+    if (!connectionId || !database || refTableColumns[refTable]) return;
+    try {
+      const result = await window.electronAPI.getTableColumns(connectionId, database, refTable);
+      if (result.success) {
+        const cols = result.data.map((c: any) => c.Field);
+        setRefTableColumns({ ...refTableColumns, [refTable]: cols });
+      }
+    } catch (e) {
+      console.error('加载引用表列失败', e);
+    }
+  };
 
   const addColumn = () => {
     setColumns([...columns, { name: '', type: 'VARCHAR', length: '255', nullable: true, defaultValue: '', primaryKey: false, autoIncrement: false, unique: false, index: false, unsigned: false, comment: '' }]);
@@ -213,6 +261,31 @@ const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ onClose, onSubmit
     setIndexes(updated);
   };
 
+  // 外键操作
+  const addForeignKey = () => {
+    setForeignKeys([...foreignKeys, {
+      name: `fk_${tableName || 'table'}_${foreignKeys.length + 1}`,
+      column: '',
+      refTable: '',
+      refColumn: '',
+      onDelete: 'RESTRICT',
+      onUpdate: 'RESTRICT',
+    }]);
+  };
+
+  const removeForeignKey = (index: number) => {
+    setForeignKeys(foreignKeys.filter((_, i) => i !== index));
+  };
+
+  const updateForeignKey = (index: number, field: keyof ForeignKey, value: any) => {
+    const updated = [...foreignKeys];
+    updated[index] = { ...updated[index], [field]: value };
+    if (field === 'refTable' && value) {
+      loadRefTableColumns(value);
+    }
+    setForeignKeys(updated);
+  };
+
   const handleSubmit = () => {
     if (!tableName.trim()) {
       alert('请输入表名');
@@ -233,7 +306,9 @@ const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ onClose, onSubmit
     }));
     // 验证索引
     const validIndexes = indexes.filter(idx => idx.columns.length > 0);
-    onSubmit(tableName, columnsWithFullType, validIndexes);
+    // 验证外键
+    const validForeignKeys = foreignKeys.filter(fk => fk.column && fk.refTable && fk.refColumn);
+    onSubmit(tableName, columnsWithFullType, validIndexes, validForeignKeys);
   };
 
   return (
@@ -265,7 +340,13 @@ const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ onClose, onSubmit
               className={`tab ${activeTab === 'indexes' ? 'active' : ''}`}
               onClick={() => setActiveTab('indexes')}
             >
-              索引
+              索引 ({indexes.length})
+            </button>
+            <button 
+              className={`tab ${activeTab === 'foreignKeys' ? 'active' : ''}`}
+              onClick={() => setActiveTab('foreignKeys')}
+            >
+              外键 ({foreignKeys.length})
             </button>
           </div>
 
@@ -464,6 +545,73 @@ const CreateTableDialog: React.FC<CreateTableDialogProps> = ({ onClose, onSubmit
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'foreignKeys' && (
+            <div className="foreignkeys-section">
+              <div className="columns-header">
+                <span className="section-info">定义表的外键约束</span>
+                <button className="btn-add-column" onClick={addForeignKey}>➕ 添加外键</button>
+              </div>
+
+              {!connectionId || !database ? (
+                <div className="empty-hint">需要先连接数据库才能设置外键</div>
+              ) : foreignKeys.length === 0 ? (
+                <div className="empty-hint">暂无外键，点击"添加外键"创建</div>
+              ) : (
+                <div className="foreignkeys-list">
+                  {foreignKeys.map((fk, i) => {
+                    const refCols = refTableColumns[fk.refTable] || [];
+                    return (
+                      <div key={i} className="fk-item">
+                        <div className="fk-row">
+                          <div className="fk-field">
+                            <label>外键名称</label>
+                            <input type="text" value={fk.name} onChange={(e) => updateForeignKey(i, 'name', e.target.value)} />
+                          </div>
+                          <div className="fk-field">
+                            <label>本表列</label>
+                            <select value={fk.column} onChange={(e) => updateForeignKey(i, 'column', e.target.value)}>
+                              <option value="">选择列</option>
+                              {columns.map(col => <option key={col.name} value={col.name}>{col.name}</option>)}
+                            </select>
+                          </div>
+                          <div className="fk-field">
+                            <label>引用表</label>
+                            <select value={fk.refTable} onChange={(e) => updateForeignKey(i, 'refTable', e.target.value)}>
+                              <option value="">选择表</option>
+                              {allTables.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                          <div className="fk-field">
+                            <label>引用列</label>
+                            <select value={fk.refColumn} onChange={(e) => updateForeignKey(i, 'refColumn', e.target.value)} disabled={!fk.refTable}>
+                              <option value="">选择列</option>
+                              {refCols.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          </div>
+                          <button className="btn-remove-column" onClick={() => removeForeignKey(i)}>🗑️</button>
+                        </div>
+                        <div className="fk-row fk-actions-row">
+                          <div className="fk-field">
+                            <label>ON DELETE</label>
+                            <select value={fk.onDelete} onChange={(e) => updateForeignKey(i, 'onDelete', e.target.value)}>
+                              {FK_ACTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                            </select>
+                          </div>
+                          <div className="fk-field">
+                            <label>ON UPDATE</label>
+                            <select value={fk.onUpdate} onChange={(e) => updateForeignKey(i, 'onUpdate', e.target.value)}>
+                              {FK_ACTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -245,6 +245,27 @@ export class DatabaseManager {
     );
   }
 
+  // 格式化默认值
+  private formatDefaultValue(defaultValue: string): string {
+    if (!defaultValue) return '';
+    const upper = defaultValue.toUpperCase();
+    // 这些特殊值不需要引号
+    const specialValues = ['NULL', 'CURRENT_TIMESTAMP', 'CURRENT_DATE', 'CURRENT_TIME', 'NOW()'];
+    if (specialValues.some(v => upper.startsWith(v))) {
+      return defaultValue;
+    }
+    // 数字不需要引号
+    if (/^-?\d+(\.\d+)?$/.test(defaultValue)) {
+      return defaultValue;
+    }
+    // 空字符串
+    if (defaultValue === "''") {
+      return "''";
+    }
+    // 其他值需要引号
+    return `'${defaultValue}'`;
+  }
+
   // 添加列
   async addColumn(connectionId: string, database: string, table: string, column: {name: string, type: string, nullable: boolean, defaultValue?: string}): Promise<void> {
     const connection = this.getConnection(connectionId);
@@ -252,7 +273,9 @@ export class DatabaseManager {
     
     let sql = `ALTER TABLE \`${table}\` ADD COLUMN \`${column.name}\` ${column.type}`;
     if (!column.nullable) sql += ' NOT NULL';
-    if (column.defaultValue !== undefined && column.defaultValue !== '') sql += ` DEFAULT '${column.defaultValue}'`;
+    if (column.defaultValue !== undefined && column.defaultValue !== '') {
+      sql += ` DEFAULT ${this.formatDefaultValue(column.defaultValue)}`;
+    }
     
     await connection.query(sql);
   }
@@ -264,7 +287,9 @@ export class DatabaseManager {
     
     let sql = `ALTER TABLE \`${table}\` CHANGE COLUMN \`${oldName}\` \`${column.name}\` ${column.type}`;
     if (!column.nullable) sql += ' NOT NULL';
-    if (column.defaultValue !== undefined && column.defaultValue !== '') sql += ` DEFAULT '${column.defaultValue}'`;
+    if (column.defaultValue !== undefined && column.defaultValue !== '') {
+      sql += ` DEFAULT ${this.formatDefaultValue(column.defaultValue)}`;
+    }
     
     await connection.query(sql);
   }
@@ -309,6 +334,90 @@ export class DatabaseManager {
     const connection = this.getConnection(connectionId);
     await connection.query(`USE \`${database}\``);
     await connection.query(`TRUNCATE TABLE \`${table}\``);
+  }
+
+  // 获取表的索引
+  async getTableIndexes(connectionId: string, database: string, table: string): Promise<any[]> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    const [rows] = await connection.query(`SHOW INDEX FROM \`${table}\``);
+    return rows as any[];
+  }
+
+  // 获取表的外键
+  async getTableForeignKeys(connectionId: string, database: string, table: string): Promise<any[]> {
+    const connection = this.getConnection(connectionId);
+    const [rows] = await connection.query(`
+      SELECT 
+        CONSTRAINT_NAME as name,
+        COLUMN_NAME as column,
+        REFERENCED_TABLE_NAME as refTable,
+        REFERENCED_COLUMN_NAME as refColumn
+      FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND REFERENCED_TABLE_NAME IS NOT NULL
+    `, [database, table]);
+    return rows as any[];
+  }
+
+  // 添加索引
+  async addIndex(connectionId: string, database: string, table: string, index: {name: string, columns: string[], type: string}): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    const cols = index.columns.map(c => `\`${c}\``).join(', ');
+    let sql = '';
+    if (index.type === 'UNIQUE') {
+      sql = `CREATE UNIQUE INDEX \`${index.name}\` ON \`${table}\` (${cols})`;
+    } else if (index.type === 'FULLTEXT') {
+      sql = `CREATE FULLTEXT INDEX \`${index.name}\` ON \`${table}\` (${cols})`;
+    } else {
+      sql = `CREATE INDEX \`${index.name}\` ON \`${table}\` (${cols})`;
+    }
+    await connection.query(sql);
+  }
+
+  // 删除索引
+  async dropIndex(connectionId: string, database: string, table: string, indexName: string): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    await connection.query(`DROP INDEX \`${indexName}\` ON \`${table}\``);
+  }
+
+  // 添加外键
+  async addForeignKey(connectionId: string, database: string, table: string, fk: {name: string, column: string, refTable: string, refColumn: string, onDelete?: string, onUpdate?: string}): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    let sql = `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${fk.name}\` FOREIGN KEY (\`${fk.column}\`) REFERENCES \`${fk.refTable}\`(\`${fk.refColumn}\`)`;
+    if (fk.onDelete) sql += ` ON DELETE ${fk.onDelete}`;
+    if (fk.onUpdate) sql += ` ON UPDATE ${fk.onUpdate}`;
+    await connection.query(sql);
+  }
+
+  // 删除外键
+  async dropForeignKey(connectionId: string, database: string, table: string, fkName: string): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    await connection.query(`ALTER TABLE \`${table}\` DROP FOREIGN KEY \`${fkName}\``);
+  }
+
+  // 修改主键
+  async modifyPrimaryKey(connectionId: string, database: string, table: string, columns: string[]): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    // 先删除旧主键
+    try {
+      await connection.query(`ALTER TABLE \`${table}\` DROP PRIMARY KEY`);
+    } catch (e) {
+      // 可能没有主键
+    }
+    
+    // 添加新主键
+    if (columns.length > 0) {
+      const cols = columns.map(c => `\`${c}\``).join(', ');
+      await connection.query(`ALTER TABLE \`${table}\` ADD PRIMARY KEY (${cols})`);
+    }
   }
 }
 

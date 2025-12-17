@@ -77,6 +77,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   truncateTable: (connectionId: string, database: string, table: string) =>
     ipcRenderer.invoke('db:truncate-table', connectionId, database, table),
+  
+  getTableIndexes: (connectionId: string, database: string, table: string) =>
+    ipcRenderer.invoke('db:get-table-indexes', connectionId, database, table),
+  
+  getTableForeignKeys: (connectionId: string, database: string, table: string) =>
+    ipcRenderer.invoke('db:get-table-foreign-keys', connectionId, database, table),
+  
+  addIndex: (connectionId: string, database: string, table: string, index: any) =>
+    ipcRenderer.invoke('db:add-index', connectionId, database, table, index),
+  
+  dropIndex: (connectionId: string, database: string, table: string, indexName: string) =>
+    ipcRenderer.invoke('db:drop-index', connectionId, database, table, indexName),
+  
+  addForeignKey: (connectionId: string, database: string, table: string, fk: any) =>
+    ipcRenderer.invoke('db:add-foreign-key', connectionId, database, table, fk),
+  
+  dropForeignKey: (connectionId: string, database: string, table: string, fkName: string) =>
+    ipcRenderer.invoke('db:drop-foreign-key', connectionId, database, table, fkName),
+  
+  modifyPrimaryKey: (connectionId: string, database: string, table: string, columns: string[]) =>
+    ipcRenderer.invoke('db:modify-primary-key', connectionId, database, table, columns),
 
   // Redis operations
   redisTestConnection: (config: DatabaseConfig) =>
@@ -142,6 +163,13 @@ declare global {
       insertRow: (connectionId: string, database: string, table: string, data: any) => Promise<any>;
       deleteRows: (connectionId: string, database: string, table: string, primaryKey: any) => Promise<any>;
       truncateTable: (connectionId: string, database: string, table: string) => Promise<any>;
+      getTableIndexes: (connectionId: string, database: string, table: string) => Promise<any>;
+      getTableForeignKeys: (connectionId: string, database: string, table: string) => Promise<any>;
+      addIndex: (connectionId: string, database: string, table: string, index: any) => Promise<any>;
+      dropIndex: (connectionId: string, database: string, table: string, indexName: string) => Promise<any>;
+      addForeignKey: (connectionId: string, database: string, table: string, fk: any) => Promise<any>;
+      dropForeignKey: (connectionId: string, database: string, table: string, fkName: string) => Promise<any>;
+      modifyPrimaryKey: (connectionId: string, database: string, table: string, columns: string[]) => Promise<any>;
       // Redis
       redisTestConnection: (config: DatabaseConfig) => Promise<any>;
       redisConnect: (config: DatabaseConfig) => Promise<any>;

@@ -267,3 +267,74 @@
   height: 14px;
   accent-color: #007acc;
 }
+
+/* 外键部分 */
+.foreignkeys-section {
+  margin-top: 8px;
+}
+
+.foreignkeys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fk-item {
+  background-color: #252525;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.fk-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+.fk-row:last-child {
+  margin-bottom: 0;
+}
+
+.fk-field {
+  flex: 1;
+  min-width: 100px;
+}
+
+.fk-field label {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.fk-field input,
+.fk-field select {
+  width: 100%;
+  background-color: #1e1e1e;
+  border: 1px solid #3d3d3d;
+  color: #e0e0e0;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.fk-field input:focus,
+.fk-field select:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.fk-field input:disabled,
+.fk-field select:disabled {
+  opacity: 0.6;
+}
+
+.fk-actions-row {
+  padding-left: 20px;
+}
+
+.fk-actions-row .fk-field {
+  max-width: 150px;
+}
