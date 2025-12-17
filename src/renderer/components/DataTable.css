@@ -142,3 +142,285 @@
   outline: none;
   border-color: #007acc;
 }
+
+/* 可编辑表格样式 */
+.data-table-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-add-row,
+.btn-delete-selected,
+.btn-truncate {
+  background-color: #007acc;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.btn-add-row:hover {
+  background-color: #005999;
+}
+
+.btn-delete-selected {
+  background-color: #d9534f;
+}
+
+.btn-delete-selected:hover {
+  background-color: #c9302c;
+}
+
+.btn-truncate {
+  background-color: #f0ad4e;
+  color: #333;
+}
+
+.btn-truncate:hover {
+  background-color: #ec971f;
+}
+
+.select-col {
+  width: 40px;
+  text-align: center !important;
+}
+
+.select-col input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #007acc;
+}
+
+.data-table tr.selected td {
+  background-color: rgba(0, 122, 204, 0.2);
+}
+
+.action-col {
+  width: 50px;
+  text-align: center !important;
+}
+
+.btn-row-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 14px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.btn-row-delete:hover {
+  opacity: 1;
+}
+
+.data-table td.editable {
+  cursor: pointer;
+}
+
+.data-table td.editable:hover {
+  background-color: #333;
+}
+
+.cell-input {
+  width: 100%;
+  background-color: #2d2d2d;
+  border: 1px solid #007acc;
+  color: #e0e0e0;
+  padding: 4px 8px;
+  font-size: 13px;
+  border-radius: 2px;
+}
+
+.cell-input:focus {
+  outline: none;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: #2d2d2d;
+  border-radius: 8px;
+  width: 450px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #3d3d3d;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #fff;
+}
+
+.modal-header .btn-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-header .btn-close:hover {
+  color: #fff;
+}
+
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body .form-group {
+  margin-bottom: 12px;
+}
+
+.modal-body .form-group label {
+  display: block;
+  font-size: 13px;
+  color: #aaa;
+  margin-bottom: 4px;
+}
+
+.modal-body .form-group input {
+  width: 100%;
+  background-color: #1e1e1e;
+  border: 1px solid #3d3d3d;
+  color: #e0e0e0;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.modal-body .form-group input:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.modal-footer {
+  padding: 16px;
+  border-top: 1px solid #3d3d3d;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-primary {
+  background-color: #007acc;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-primary:hover {
+  background-color: #005999;
+}
+
+.btn-secondary {
+  background-color: #3d3d3d;
+  color: #e0e0e0;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-secondary:hover {
+  background-color: #4d4d4d;
+}
+
+/* 类型提示 */
+.type-hint {
+  font-size: 11px;
+  color: #666;
+  margin-left: 6px;
+  font-weight: normal;
+}
+
+.auto-increment-hint {
+  font-size: 10px;
+  color: #007acc;
+  margin-left: 6px;
+  background: rgba(0, 122, 204, 0.2);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.disabled-input {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* checkbox 样式 */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #007acc;
+}
+
+/* 日期时间输入框 */
+.modal-body input[type="date"],
+.modal-body input[type="time"],
+.modal-body input[type="datetime-local"] {
+  width: 100%;
+  background-color: #1e1e1e;
+  border: 1px solid #3d3d3d;
+  color: #e0e0e0;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.modal-body input[type="date"]:focus,
+.modal-body input[type="time"]:focus,
+.modal-body input[type="datetime-local"]:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+/* 让日期选择器图标可见 */
+.modal-body input[type="date"]::-webkit-calendar-picker-indicator,
+.modal-body input[type="time"]::-webkit-calendar-picker-indicator,
+.modal-body input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+}

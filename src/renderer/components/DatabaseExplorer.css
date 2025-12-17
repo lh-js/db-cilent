@@ -99,3 +99,41 @@
   cursor: wait;
 }
 
+.explorer-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* 右键菜单 */
+.context-menu {
+  position: fixed;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 4px 0;
+  min-width: 120px;
+  z-index: 1000;
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.context-menu-item:hover {
+  background-color: #007acc;
+}
+
+.context-menu-item.danger {
+  color: #f44336;
+}
+
+.context-menu-item.danger:hover {
+  background-color: #f44336;
+  color: #fff;
+}
+

@@ -84,10 +84,10 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onSuccess, onCancel, ed
         user: value === 'redis' ? '' : (prev.user || 'root'),
       }));
     } else {
-      setFormData((prev) => ({
-        ...prev,
+    setFormData((prev) => ({
+      ...prev,
         [name]: name === 'port' ? parseInt(value) || getDefaultPort(prev.type) : value,
-      }));
+    }));
     }
   };
 
@@ -218,16 +218,16 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onSuccess, onCancel, ed
           </div>
 
           {formData.type !== 'redis' && (
-            <div className="form-group">
-              <label>用户名</label>
-              <input
-                type="text"
-                name="user"
-                value={formData.user}
-                onChange={handleChange}
-                placeholder="root"
-              />
-            </div>
+          <div className="form-group">
+            <label>用户名</label>
+            <input
+              type="text"
+              name="user"
+              value={formData.user}
+              onChange={handleChange}
+              placeholder="root"
+            />
+          </div>
           )}
 
           <div className="form-group">
@@ -244,16 +244,16 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onSuccess, onCancel, ed
       )}
 
       {formData.type !== 'redis' && (
-        <div className="form-group">
-          <label>数据库名</label>
-          <input
-            type="text"
-            name="database"
-            value={formData.database}
-            onChange={handleChange}
-            placeholder="数据库名（可选）"
-          />
-        </div>
+      <div className="form-group">
+        <label>数据库名</label>
+        <input
+          type="text"
+          name="database"
+          value={formData.database}
+          onChange={handleChange}
+          placeholder="数据库名（可选）"
+        />
+      </div>
       )}
 
       {formData.type === 'redis' && (

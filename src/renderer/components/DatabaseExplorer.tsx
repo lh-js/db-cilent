@@ -7,6 +7,9 @@ interface DatabaseExplorerProps {
   onDatabaseSelected: (database: string) => void;
   onTableSelected?: (table: string, data: any) => void;
   onLoadingChange?: (loading: boolean) => void;
+  onCreateTable?: () => void;
+  onTablesChanged?: () => void;
+  onEditStructure?: (table: string) => void;
 }
 
 const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
@@ -15,6 +18,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   onDatabaseSelected,
   onTableSelected,
   onLoadingChange,
+  onCreateTable,
+  onTablesChanged,
+  onEditStructure,
 }) => {
   const [databases, setDatabases] = useState<string[]>([]);
   const [tables, setTables] = useState<string[]>([]);
@@ -22,6 +28,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const [loadingTable, setLoadingTable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{x: number, y: number, table: string} | null>(null);
 
   useEffect(() => {
     if (connectionId) {
@@ -72,13 +79,50 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent, table: string) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, table });
+  };
+
+  const handleDropTable = async () => {
+    if (!contextMenu || !currentDatabase) return;
+    if (!confirm(`确定要删除表 "${contextMenu.table}" 吗？此操作不可恢复！`)) return;
+    
+    try {
+      const result = await window.electronAPI.dropTable(connectionId, currentDatabase, contextMenu.table);
+      if (result.success) {
+        loadTables();
+        onTablesChanged?.();
+      } else {
+        alert('删除失败: ' + result.error);
+      }
+    } catch (err: any) {
+      alert('删除失败: ' + err.message);
+    }
+    setContextMenu(null);
+  };
+
+  // 关闭右键菜单
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
+
   return (
     <div className="database-explorer">
       <div className="explorer-header">
         <h3>数据库</h3>
-        <button className="btn-icon" onClick={loadDatabases} title="刷新">
-          🔄
-        </button>
+        <div className="explorer-actions">
+          {currentDatabase && onCreateTable && (
+            <button className="btn-icon" onClick={onCreateTable} title="新建表">
+              ➕
+            </button>
+          )}
+          <button className="btn-icon" onClick={loadDatabases} title="刷新">
+            🔄
+          </button>
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -118,6 +162,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         }
                       }
                     }}
+                    onContextMenu={(e) => handleContextMenu(e, table)}
                   >
                     📊 {table}
                   </div>
@@ -127,6 +172,26 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           </div>
         ))}
       </div>
+
+      {/* 右键菜单 */}
+      {contextMenu && (
+        <div 
+          className="context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          {onEditStructure && (
+            <div className="context-menu-item" onClick={() => {
+              onEditStructure(contextMenu.table);
+              setContextMenu(null);
+            }}>
+              🔧 修改表结构
+            </div>
+          )}
+          <div className="context-menu-item danger" onClick={handleDropTable}>
+            🗑️ 删除表
+          </div>
+        </div>
+      )}
     </div>
   );
 };

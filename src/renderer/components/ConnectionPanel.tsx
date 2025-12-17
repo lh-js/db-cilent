@@ -66,7 +66,7 @@ const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
             if (editingConnection) {
               onConnectionUpdated(connection);
             } else {
-              onConnectionCreated(connection);
+            onConnectionCreated(connection);
             }
             setShowForm(false);
             setEditingConnection(null);

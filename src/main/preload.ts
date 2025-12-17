@@ -44,6 +44,40 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getTableData: (connectionId: string, database: string, table: string) => 
     ipcRenderer.invoke('db:get-table-data', connectionId, database, table),
 
+  // Table management
+  createTable: (connectionId: string, database: string, tableName: string, columns: any[], indexes?: any[]) =>
+    ipcRenderer.invoke('db:create-table', connectionId, database, tableName, columns, indexes),
+  
+  dropTable: (connectionId: string, database: string, table: string) =>
+    ipcRenderer.invoke('db:drop-table', connectionId, database, table),
+  
+  getTableColumns: (connectionId: string, database: string, table: string) =>
+    ipcRenderer.invoke('db:get-table-columns', connectionId, database, table),
+  
+  updateRow: (connectionId: string, database: string, table: string, primaryKey: any, updates: any) =>
+    ipcRenderer.invoke('db:update-row', connectionId, database, table, primaryKey, updates),
+  
+  deleteRow: (connectionId: string, database: string, table: string, primaryKey: any) =>
+    ipcRenderer.invoke('db:delete-row', connectionId, database, table, primaryKey),
+  
+  addColumn: (connectionId: string, database: string, table: string, column: any) =>
+    ipcRenderer.invoke('db:add-column', connectionId, database, table, column),
+  
+  modifyColumn: (connectionId: string, database: string, table: string, oldName: string, column: any) =>
+    ipcRenderer.invoke('db:modify-column', connectionId, database, table, oldName, column),
+  
+  dropColumn: (connectionId: string, database: string, table: string, columnName: string) =>
+    ipcRenderer.invoke('db:drop-column', connectionId, database, table, columnName),
+  
+  insertRow: (connectionId: string, database: string, table: string, data: any) =>
+    ipcRenderer.invoke('db:insert-row', connectionId, database, table, data),
+  
+  deleteRows: (connectionId: string, database: string, table: string, primaryKey: any) =>
+    ipcRenderer.invoke('db:delete-rows', connectionId, database, table, primaryKey),
+  
+  truncateTable: (connectionId: string, database: string, table: string) =>
+    ipcRenderer.invoke('db:truncate-table', connectionId, database, table),
+
   // Redis operations
   redisTestConnection: (config: DatabaseConfig) =>
     ipcRenderer.invoke('redis:test-connection', config),
@@ -96,6 +130,18 @@ declare global {
       getTableStructure: (connectionId: string, database: string, table: string) => Promise<any>;
       executeQuery: (connectionId: string, database: string, query: string) => Promise<any>;
       getTableData: (connectionId: string, database: string, table: string) => Promise<any>;
+      // Table management
+      createTable: (connectionId: string, database: string, tableName: string, columns: any[], indexes?: any[]) => Promise<any>;
+      dropTable: (connectionId: string, database: string, table: string) => Promise<any>;
+      getTableColumns: (connectionId: string, database: string, table: string) => Promise<any>;
+      updateRow: (connectionId: string, database: string, table: string, primaryKey: any, updates: any) => Promise<any>;
+      deleteRow: (connectionId: string, database: string, table: string, primaryKey: any) => Promise<any>;
+      addColumn: (connectionId: string, database: string, table: string, column: any) => Promise<any>;
+      modifyColumn: (connectionId: string, database: string, table: string, oldName: string, column: any) => Promise<any>;
+      dropColumn: (connectionId: string, database: string, table: string, columnName: string) => Promise<any>;
+      insertRow: (connectionId: string, database: string, table: string, data: any) => Promise<any>;
+      deleteRows: (connectionId: string, database: string, table: string, primaryKey: any) => Promise<any>;
+      truncateTable: (connectionId: string, database: string, table: string) => Promise<any>;
       // Redis
       redisTestConnection: (config: DatabaseConfig) => Promise<any>;
       redisConnect: (config: DatabaseConfig) => Promise<any>;

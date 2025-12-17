@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ConnectionPanel from './components/ConnectionPanel';
 import DatabaseExplorer from './components/DatabaseExplorer';
 import RedisExplorer from './components/RedisExplorer';
 import QueryEditor from './components/QueryEditor';
 import DataTable from './components/DataTable';
 import RedisDataView from './components/RedisDataView';
+import CreateTableDialog from './components/CreateTableDialog';
+import TableStructureDialog from './components/TableStructureDialog';
 import './styles/App.css';
 
 interface Connection {
@@ -26,6 +28,12 @@ function App({ onReady }: AppProps) {
   const [redisData, setRedisData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [currentTable, setCurrentTable] = useState<string | null>(null);
+  const [showCreateTable, setShowCreateTable] = useState(false);
+  const [primaryKeyColumn, setPrimaryKeyColumn] = useState<string | null>(null);
+  const [columnInfo, setColumnInfo] = useState<any[]>([]);
+  const [showStructure, setShowStructure] = useState(false);
+  const [structureTable, setStructureTable] = useState<string | null>(null);
+  const explorerRef = useRef<any>(null);
 
   useEffect(() => {
     // Load saved connections from localStorage
@@ -116,6 +124,86 @@ function App({ onReady }: AppProps) {
   const handleTableSelected = async (table: string, data: any) => {
     setCurrentTable(table);
     setQueryResults(data);
+    // 获取列信息（包括主键和类型）
+    if (currentConnection && currentDatabase) {
+      try {
+        const result = await window.electronAPI.getTableColumns(currentConnection, currentDatabase, table);
+        if (result.success) {
+          setColumnInfo(result.data);
+          const pkCol = result.data.find((c: any) => c.Key === 'PRI');
+          setPrimaryKeyColumn(pkCol?.Field || null);
+        }
+      } catch (e) {
+        console.error('获取列信息失败', e);
+      }
+    }
+  };
+
+  const handleCreateTable = async (tableName: string, columns: any[], indexes: any[]) => {
+    if (!currentConnection || !currentDatabase) return;
+    try {
+      const result = await window.electronAPI.createTable(currentConnection, currentDatabase, tableName, columns, indexes);
+      if (result.success) {
+        setShowCreateTable(false);
+        // 触发刷新表列表
+        explorerRef.current?.loadTables?.();
+      } else {
+        alert('创建表失败: ' + result.error);
+      }
+    } catch (err: any) {
+      alert('创建表失败: ' + err.message);
+    }
+  };
+
+  const refreshTableData = async () => {
+    if (!currentConnection || !currentDatabase || !currentTable) return;
+    setLoading(true);
+    try {
+      const result = await window.electronAPI.getTableData(currentConnection, currentDatabase, currentTable);
+      if (result.success) {
+        setQueryResults(result.data);
+      }
+      // 同时刷新列信息
+      const colResult = await window.electronAPI.getTableColumns(currentConnection, currentDatabase, currentTable);
+      if (colResult.success) {
+        setColumnInfo(colResult.data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditStructure = async (table: string) => {
+    if (!currentConnection || !currentDatabase) return;
+    try {
+      const result = await window.electronAPI.getTableColumns(currentConnection, currentDatabase, table);
+      if (result.success) {
+        setColumnInfo(result.data);
+        setStructureTable(table);
+        setShowStructure(true);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleStructureChanged = async () => {
+    if (!currentConnection || !currentDatabase || !structureTable) return;
+    // 刷新列信息
+    try {
+      const result = await window.electronAPI.getTableColumns(currentConnection, currentDatabase, structureTable);
+      if (result.success) {
+        setColumnInfo(result.data);
+      }
+      // 如果正在查看这个表的数据，也刷新数据
+      if (currentTable === structureTable) {
+        refreshTableData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleRedisKeySelected = (key: string, data: any) => {
@@ -164,6 +252,8 @@ function App({ onReady }: AppProps) {
                       onDatabaseSelected={setCurrentDatabase}
                       onTableSelected={handleTableSelected}
                       onLoadingChange={setLoading}
+                      onCreateTable={() => setShowCreateTable(true)}
+                      onEditStructure={handleEditStructure}
                     />
                   )}
                 </div>
@@ -182,6 +272,13 @@ function App({ onReady }: AppProps) {
                       rows={queryResults.rows || []}
                       totalCount={queryResults.totalCount}
                       executionTime={queryResults.executionTime}
+                      editable={!!currentTable && !!primaryKeyColumn}
+                      connectionId={currentConnection || undefined}
+                      database={currentDatabase || undefined}
+                      table={currentTable || undefined}
+                      primaryKeyColumn={primaryKeyColumn || undefined}
+                      columnInfo={columnInfo}
+                      onDataChanged={refreshTableData}
                     />
                   ) : (
                     <div className="no-results">
@@ -210,6 +307,26 @@ function App({ onReady }: AppProps) {
           )}
         </div>
       </div>
+
+      {/* 创建表对话框 */}
+      {showCreateTable && (
+        <CreateTableDialog
+          onClose={() => setShowCreateTable(false)}
+          onSubmit={handleCreateTable}
+        />
+      )}
+
+      {/* 修改表结构对话框 */}
+      {showStructure && structureTable && currentConnection && currentDatabase && (
+        <TableStructureDialog
+          connectionId={currentConnection}
+          database={currentDatabase}
+          table={structureTable}
+          columns={columnInfo}
+          onClose={() => setShowStructure(false)}
+          onChanged={handleStructureChanged}
+        />
+      )}
     </div>
   );
 }

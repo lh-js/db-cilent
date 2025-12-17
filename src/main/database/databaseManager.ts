@@ -127,5 +127,188 @@ export class DatabaseManager {
       executionTime,
     };
   }
+
+  // 创建表
+  async createTable(
+    connectionId: string, 
+    database: string, 
+    tableName: string, 
+    columns: Array<{
+      name: string, 
+      type: string, 
+      nullable: boolean, 
+      defaultValue?: string, 
+      primaryKey?: boolean,
+      autoIncrement?: boolean,
+      unique?: boolean,
+      unsigned?: boolean,
+      comment?: string
+    }>,
+    indexes?: Array<{name: string, columns: string[], type: 'INDEX' | 'UNIQUE' | 'FULLTEXT'}>
+  ): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    const columnDefs: string[] = [];
+    const primaryKeys: string[] = [];
+    const uniqueKeys: string[] = [];
+    
+    columns.forEach(col => {
+      let def = `\`${col.name}\` ${col.type}`;
+      if (col.unsigned) def += ' UNSIGNED';
+      if (!col.nullable) def += ' NOT NULL';
+      if (col.autoIncrement) def += ' AUTO_INCREMENT';
+      if (col.defaultValue !== undefined && col.defaultValue !== '') {
+        // 处理特殊默认值
+        if (col.defaultValue.toUpperCase() === 'NULL') {
+          def += ' DEFAULT NULL';
+        } else if (col.defaultValue.toUpperCase() === 'CURRENT_TIMESTAMP') {
+          def += ' DEFAULT CURRENT_TIMESTAMP';
+        } else {
+          def += ` DEFAULT '${col.defaultValue}'`;
+        }
+      }
+      if (col.comment) def += ` COMMENT '${col.comment}'`;
+      
+      columnDefs.push(def);
+      
+      if (col.primaryKey) primaryKeys.push(`\`${col.name}\``);
+      if (col.unique && !col.primaryKey) uniqueKeys.push(`\`${col.name}\``);
+    });
+    
+    // 添加主键约束
+    if (primaryKeys.length > 0) {
+      columnDefs.push(`PRIMARY KEY (${primaryKeys.join(', ')})`);
+    }
+    
+    // 添加唯一约束
+    uniqueKeys.forEach(uk => {
+      columnDefs.push(`UNIQUE KEY (${uk})`);
+    });
+    
+    // 添加索引
+    if (indexes && indexes.length > 0) {
+      indexes.forEach((idx, i) => {
+        const idxName = idx.name || `idx_${tableName}_${i}`;
+        const idxCols = idx.columns.map(c => `\`${c}\``).join(', ');
+        if (idx.type === 'UNIQUE') {
+          columnDefs.push(`UNIQUE KEY \`${idxName}\` (${idxCols})`);
+        } else if (idx.type === 'FULLTEXT') {
+          columnDefs.push(`FULLTEXT KEY \`${idxName}\` (${idxCols})`);
+        } else {
+          columnDefs.push(`KEY \`${idxName}\` (${idxCols})`);
+        }
+      });
+    }
+    
+    await connection.query(`CREATE TABLE \`${tableName}\` (${columnDefs.join(', ')})`);
+  }
+
+  // 删除表
+  async dropTable(connectionId: string, database: string, table: string): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    await connection.query(`DROP TABLE \`${table}\``);
+  }
+
+  // 获取表的列信息（用于确定主键）
+  async getTableColumns(connectionId: string, database: string, table: string): Promise<any[]> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    const [rows] = await connection.query(`SHOW COLUMNS FROM \`${table}\``);
+    return rows as any[];
+  }
+
+  // 更新行数据
+  async updateRow(connectionId: string, database: string, table: string, primaryKey: {column: string, value: any}, updates: Record<string, any>): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    const setClauses = Object.entries(updates)
+      .map(([col]) => `\`${col}\` = ?`)
+      .join(', ');
+    const values = [...Object.values(updates), primaryKey.value];
+    
+    await connection.query(
+      `UPDATE \`${table}\` SET ${setClauses} WHERE \`${primaryKey.column}\` = ?`,
+      values
+    );
+  }
+
+  // 删除行
+  async deleteRow(connectionId: string, database: string, table: string, primaryKey: {column: string, value: any}): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    await connection.query(
+      `DELETE FROM \`${table}\` WHERE \`${primaryKey.column}\` = ?`,
+      [primaryKey.value]
+    );
+  }
+
+  // 添加列
+  async addColumn(connectionId: string, database: string, table: string, column: {name: string, type: string, nullable: boolean, defaultValue?: string}): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    let sql = `ALTER TABLE \`${table}\` ADD COLUMN \`${column.name}\` ${column.type}`;
+    if (!column.nullable) sql += ' NOT NULL';
+    if (column.defaultValue !== undefined && column.defaultValue !== '') sql += ` DEFAULT '${column.defaultValue}'`;
+    
+    await connection.query(sql);
+  }
+
+  // 修改列
+  async modifyColumn(connectionId: string, database: string, table: string, oldName: string, column: {name: string, type: string, nullable: boolean, defaultValue?: string}): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    let sql = `ALTER TABLE \`${table}\` CHANGE COLUMN \`${oldName}\` \`${column.name}\` ${column.type}`;
+    if (!column.nullable) sql += ' NOT NULL';
+    if (column.defaultValue !== undefined && column.defaultValue !== '') sql += ` DEFAULT '${column.defaultValue}'`;
+    
+    await connection.query(sql);
+  }
+
+  // 删除列
+  async dropColumn(connectionId: string, database: string, table: string, columnName: string): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    await connection.query(`ALTER TABLE \`${table}\` DROP COLUMN \`${columnName}\``);
+  }
+
+  // 插入行
+  async insertRow(connectionId: string, database: string, table: string, data: Record<string, any>): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    const columns = Object.keys(data).map(c => `\`${c}\``).join(', ');
+    const placeholders = Object.keys(data).map(() => '?').join(', ');
+    const values = Object.values(data);
+    
+    await connection.query(
+      `INSERT INTO \`${table}\` (${columns}) VALUES (${placeholders})`,
+      values
+    );
+  }
+
+  // 批量删除行
+  async deleteRows(connectionId: string, database: string, table: string, primaryKey: {column: string, values: any[]}): Promise<number> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    
+    const placeholders = primaryKey.values.map(() => '?').join(', ');
+    const [result] = await connection.query(
+      `DELETE FROM \`${table}\` WHERE \`${primaryKey.column}\` IN (${placeholders})`,
+      primaryKey.values
+    );
+    return (result as any).affectedRows;
+  }
+
+  // 清空表数据
+  async truncateTable(connectionId: string, database: string, table: string): Promise<void> {
+    const connection = this.getConnection(connectionId);
+    await connection.query(`USE \`${database}\``);
+    await connection.query(`TRUNCATE TABLE \`${table}\``);
+  }
 }
 

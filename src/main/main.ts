@@ -178,6 +178,106 @@ ipcMain.handle('db:get-table-data', async (_event, connectionId, database, table
   }
 });
 
+// Table management handlers
+ipcMain.handle('db:create-table', async (_event, connectionId, database, tableName, columns, indexes) => {
+  try {
+    await dbManager.createTable(connectionId, database, tableName, columns, indexes);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:drop-table', async (_event, connectionId, database, table) => {
+  try {
+    await dbManager.dropTable(connectionId, database, table);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:get-table-columns', async (_event, connectionId, database, table) => {
+  try {
+    const columns = await dbManager.getTableColumns(connectionId, database, table);
+    return { success: true, data: columns };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:update-row', async (_event, connectionId, database, table, primaryKey, updates) => {
+  try {
+    await dbManager.updateRow(connectionId, database, table, primaryKey, updates);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:delete-row', async (_event, connectionId, database, table, primaryKey) => {
+  try {
+    await dbManager.deleteRow(connectionId, database, table, primaryKey);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:add-column', async (_event, connectionId, database, table, column) => {
+  try {
+    await dbManager.addColumn(connectionId, database, table, column);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:modify-column', async (_event, connectionId, database, table, oldName, column) => {
+  try {
+    await dbManager.modifyColumn(connectionId, database, table, oldName, column);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:drop-column', async (_event, connectionId, database, table, columnName) => {
+  try {
+    await dbManager.dropColumn(connectionId, database, table, columnName);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:insert-row', async (_event, connectionId, database, table, data) => {
+  try {
+    await dbManager.insertRow(connectionId, database, table, data);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:delete-rows', async (_event, connectionId, database, table, primaryKey) => {
+  try {
+    const count = await dbManager.deleteRows(connectionId, database, table, primaryKey);
+    return { success: true, data: count };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:truncate-table', async (_event, connectionId, database, table) => {
+  try {
+    await dbManager.truncateTable(connectionId, database, table);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
 // Redis IPC Handlers
 ipcMain.handle('redis:test-connection', async (_event, config) => {
   try {

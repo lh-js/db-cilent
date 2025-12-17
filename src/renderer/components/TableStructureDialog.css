@@ -1,0 +1,175 @@
+.structure-modal {
+  width: 900px;
+  max-width: 95vw;
+  max-height: 85vh;
+}
+
+.structure-toolbar {
+  margin-bottom: 16px;
+}
+
+.structure-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.structure-table th,
+.structure-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #3d3d3d;
+}
+
+.structure-table th {
+  background-color: #2d2d2d;
+  color: #fff;
+  font-weight: 600;
+}
+
+.structure-table td {
+  color: #e0e0e0;
+}
+
+.structure-table tr:hover td {
+  background-color: #2a2a2a;
+}
+
+.structure-table input[type="text"],
+.structure-table select {
+  background-color: #1e1e1e;
+  border: 1px solid #3d3d3d;
+  color: #e0e0e0;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.structure-table input[type="text"]:focus,
+.structure-table select:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.structure-table input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #007acc;
+}
+
+.action-cell {
+  white-space: nowrap;
+}
+
+.action-cell button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 14px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.action-cell button:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.action-cell button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-save {
+  color: #4caf50;
+}
+
+.btn-cancel {
+  color: #f44336;
+}
+
+.btn-edit {
+  color: #2196f3;
+}
+
+.btn-delete {
+  color: #f44336;
+}
+
+.null-value {
+  color: #666;
+  font-style: italic;
+}
+
+/* 添加列表单 */
+.add-column-form {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #252525;
+  border-radius: 6px;
+}
+
+.add-column-form h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #fff;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.add-column-form .form-group {
+  flex: 1;
+  min-width: 120px;
+}
+
+.add-column-form .form-group label {
+  display: block;
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 4px;
+}
+
+.add-column-form .form-group input[type="text"],
+.add-column-form .form-group select {
+  width: 100%;
+  background-color: #1e1e1e;
+  border: 1px solid #3d3d3d;
+  color: #e0e0e0;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.add-column-form .form-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #007acc;
+}
+
+.add-column-form .form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-add-column {
+  background-color: #007acc;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.btn-add-column:hover {
+  background-color: #005999;
+}
